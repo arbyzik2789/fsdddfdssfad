@@ -1,0 +1,273 @@
+from pygame import *
+from random import *
+mixer.init()
+font.init()
+#----------настройка игры----------
+window = display.set_mode((800, 500))
+display.set_caption("шутер")
+background = transform.scale(image.load("galaxy.jpg"), (800, 500))
+
+mixer.music.load('space.ogg')
+mixer.music.play()
+mixer.music.set_volume(0.1)
+
+font.init()
+
+font1 = font.SysFont('Arial', 36)
+font2 = font.SysFont('Arial', 36)
+Lose = font2.render('YOU LOSE',1,(255,0,0))
+presx = font2.render('PRESS X TO RESET GAME',1,(255,0,0))
+
+soundkd = 109
+
+schet = 0
+time1 = 0
+timeFps  = 0 
+finish = True
+finish1 = 1
+
+pulakd1 = 60
+pulakd = pulakd1
+pulalist = []
+triplepulakd = 0
+
+nlo = []
+nlokd1 = 120
+nlokd = nlokd1
+nlokdizmen = 1800
+
+notimekd = 0
+
+timekd = 60
+timeLife = 0
+
+bafs = []
+
+bafkd = 1200
+
+bafstartuskor = 0
+
+life = 3
+
+lose = font1.render('YOU LOSE',1,(255,0,0))
+
+#-----------классы------------------
+class GameSprite(sprite.Sprite):
+    def __init__(self, p_image, x, y, speed,w,h):
+        super().__init__()
+        self.image = transform.scale(image.load(p_image), (w, h))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.speed = speed
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y)) 
+#----------создание экземпляров-------
+rocket = GameSprite('rocket.png',0,400,3,100,100)
+
+#---------игровой цикл----------------
+game = True
+clock = time.Clock()
+FPS = 60
+
+while game:
+
+    for e in event.get():
+        if e.type == QUIT:
+            game = False
+
+    #--------------------------ходба--------------------
+    keys_pressed = key.get_pressed()
+
+    if keys_pressed[K_a]:
+        if rocket.rect.x > 1:
+            rocket.rect.x -= 5
+    elif keys_pressed[K_d]:
+        if rocket.rect.x < 700:
+            rocket.rect.x += 5
+    elif keys_pressed[K_x]:
+        if life < 1:
+            finish = True
+            finish1 = 1
+            nlokd1 = 120
+            life = 3
+            pulakd1 = 60
+            bafkd = 2400
+            rocket.rect.x = 0
+            rocket.rect.y = 400
+            pulalist = []
+            nlo = []
+            nlokd1 = 120
+            nlokd = nlokd1
+            nlokdizmen = 1800
+            timeLife = 0
+
+    if timekd > 0:
+        timekd -= 1
+    else:
+        soundkd -= 1
+        timeLife += 1
+        timekd = 60
+
+    if triplepulakd > 0 :
+        triplepulakd -= 1
+
+    if soundkd < 1:
+        mixer.music.play() 
+        soundkd = 109
+
+            
+    #--------------------------евенты--------------------
+    lifeText = font1.render('life '+str(life),1,(0,255,100)) 
+    speednlo = font1.render('nlo spawn in '+str(round(nlokd1/60,2))+'sec',1,(0,100,255))
+    timeText = font1.render('time '+str(timeLife)+'sec',1,(0,0,255))
+
+    if notimekd > 0:
+        notimekd -= 1
+
+
+    if nlokdizmen > -1:
+        nlokdizmen -= 1
+    else:
+        nlokdizmen = 1800
+        if nlokd1 > 14:
+            nlokd1 -= 5
+
+    if bafstartuskor > 0:
+        bafstartuskor -= 1
+
+    if pulakd > 0:
+        pulakd -= 1
+    else:
+        if bafstartuskor > 0 :
+            pulakd = pulakd1 / 1.5
+        else:
+            pulakd  = pulakd1
+        if triplepulakd > 0:
+            pula = GameSprite('bullet.png',rocket.rect.x+0,rocket.rect.y,2,10,20)
+            pulalist.append(pula)
+            pula = GameSprite('bullet.png',rocket.rect.x+45,rocket.rect.y,2,10,20)
+            pulalist.append(pula)
+            pula = GameSprite('bullet.png',rocket.rect.x+90,rocket.rect.y,2,10,20)
+            pulalist.append(pula)
+        else:
+            pula = GameSprite('bullet.png',rocket.rect.x+45,rocket.rect.y,2,10,20)
+            pulalist.append(pula)
+
+
+    if nlokd > 0:
+        nlokd -= 1
+    else:
+        nlokd = nlokd1
+        nlo1 = GameSprite('ufo.png',randint(0,700),0,2,50,50)
+        nlo.append(nlo1)
+    
+    for nloo in nlo:
+        for pula1 in pulalist:
+            nlorec = nloo.rect
+            pularec = pula1.rect
+            if nlorec.colliderect(pularec): 
+                if nloo in nlo: 
+                    nlo.remove(nloo)
+                    pulalist.remove(pula1)
+
+
+    for pula1 in pulalist:           
+        for baf in bafs:
+            pularec = pula1.rect
+            bafrec = baf.rect
+
+            if bafrec.colliderect(pularec):
+                bafs.remove(baf)
+                pulalist.remove(pula1)
+                if baf.speed == 1:
+                    bafstartuskor = 600
+                elif baf.speed == 2:
+                    pulakd1 -= 5
+                elif baf.speed == 3:
+                    life += 1
+                elif baf.speed == 4:
+                    notimekd = 480
+                elif baf.speed == 5:
+                    triplepulakd = 601
+
+    if bafkd > 0:
+        bafkd -= 1
+    else:
+        bafkd = 1200
+        randomBaf = randint(1,5)
+        if randomBaf == 1:
+            uskor = GameSprite('uskor.bmp',randint(0,700),0,1,50,50)
+            bafs.append(uskor)
+        elif randomBaf == 2:
+            if pulakd1 > 15:
+                uskorG = GameSprite('uskorG.bmp',randint(0,700),0,2,50,50)
+                bafs.append(uskorG)
+            else:
+                uskor = GameSprite('uskor.bmp',randint(0,700),0,1,50,50)
+                bafs.append(uskor)
+        elif randomBaf == 3:
+            lifeadd = GameSprite('life.bmp',randint(0,700),0,3,50,50)
+            bafs.append(lifeadd)
+        elif randomBaf == 4:
+            notime = GameSprite('notime.bmp',randint(0,700),0,4,50,50)
+            bafs.append(notime)
+        elif randomBaf == 5:
+            triplepula = GameSprite('tiple pula.bmp',randint(0,700),0,5,50,50)
+            bafs.append(triplepula)
+
+
+        
+
+    
+
+
+    #--------------------------отрисовка--------------------
+    window.blit(background,(0,0))
+    rocket.reset()
+
+    window.blit(lifeText,(0,0))
+    window.blit(speednlo,(0,50))
+    window.blit(timeText,(0,100))
+
+    for pula1 in pulalist:
+        pula1.rect.y -= 2
+        if pula1.rect.y < -20:
+            pulalist.remove(pula1)
+        pula1.reset()
+
+    for nloo in nlo:
+        if notimekd < 1:
+            nloo.rect.y += 0.50
+        if nloo.rect.y > 450:
+            if life > 1 :
+                nlo.remove(nloo)
+                life -= 1
+            else:
+                life = 0
+                finish = False
+                window.blit(lose,(325,250))
+                window.blit(presx,(230,300))
+
+                youlifed = font2.render('YOU LIFE '+str(timeLife)+' SECONDS',1,(0,255,0))
+                window.blit(youlifed,(255,350))
+
+
+                lifeText = font1.render('life-'+str(life),1,(0,255,100)) 
+                window.blit(lifeText,(0,0))
+        nloo.reset()
+
+    for baf in bafs:
+        baf.rect.y += 0.50
+        if baf.rect.y > 450:
+            bafs.remove(baf)
+        baf.reset()
+
+    if finish:
+        display.update()
+    elif finish1 == 1:
+        display.update()
+        finish1 = 0
+    clock.tick(FPS)
+    
+
